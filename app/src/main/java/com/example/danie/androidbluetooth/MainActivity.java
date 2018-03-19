@@ -12,12 +12,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener{
     private static final String TAG = "MainActivity";
 
     //a general class required for bluetooth related activities
@@ -113,7 +114,38 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    //disconnect bluetooth
+
+    //
+    private final BroadcastReceiver mBroadcastReceiver4 = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent){
+            final String action = intent.getAction();
+            if(action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED)){
+                BluetoothDevice mDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+
+                //bond is already formed
+                if(mDevice.getBondState()==BluetoothDevice.BOND_BONDED){
+                    Log.d(TAG, "onReceive: BOND_BONDED");
+                }
+                //bond is forming
+                if(mDevice.getBondState()==BluetoothDevice.BOND_BONDED){
+                    Log.d(TAG, "onReceive: BOND_BONDING");
+
+                }
+                //bond is broken
+                if(mDevice.getBondState()==BluetoothDevice.BOND_BONDED){
+                    Log.d(TAG, "onReceive: BOND_BROKEN");
+
+                }
+            }
+        }
+    };
+
+
+
+
+    //close app
     @Override
     protected void onDestroy() {
         Log.d(TAG, "onDestroy: called.");
@@ -124,17 +156,21 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-            setContentView(R.layout.activity_main);
-            Button btnONOFF = (Button) findViewById(R.id.btnONOFF);
-            btnEnableDisable_Discoverable = (Button) findViewById(R.id.btnDiscoverable_on_off);
-            lvNewDevices = (ListView)findViewById(R.id.lvNewDevices);
-            mBTDevices = new ArrayList<>(); 
+        setContentView(R.layout.activity_main);
+        Button btnONOFF = (Button) findViewById(R.id.btnONOFF);
+        btnEnableDisable_Discoverable = (Button) findViewById(R.id.btnDiscoverable_on_off);
+        lvNewDevices = (ListView)findViewById(R.id.lvNewDevices);
+        mBTDevices = new ArrayList<>();
 
-            //gets the adapter used by the system. If it doesn't exists, it'll return null
-            mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        //gets the adapter used by the system. If it doesn't exists, it'll return null
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-            //set button functionality
-            //when clicked, would toggle bluetooth
+        //when state of bond changes
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        registerReceiver(mBroadcastReceiver4, filter);
+
+        //set button functionality
+        //when clicked, would toggle bluetooth
         btnONOFF.setOnClickListener(new View.OnClickListener() {
                 @Override
             public void onClick(View view) {
@@ -227,4 +263,23 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     */
+
+
+    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l){
+        //cancel discovery for efficiency reasons
+        mBluetoothAdapter.cancelDiscovery();
+        Log.d(TAG, "onItemClick: You clicked on a device");
+        String deviceName = mBTDevices.get(i).getName();
+        String deviceAddress = mBTDevices.get(i).getAddress();
+
+        /*
+        //creating bond
+        //quired for API 18 or above
+        if(Build.VERSION.INT.){
+
+
+        }
+        */
+    }
+
 }
